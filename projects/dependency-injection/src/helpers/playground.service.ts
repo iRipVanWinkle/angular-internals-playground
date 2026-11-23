@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  DestroyRef,
   ElementRef,
   inject,
   Injectable,
@@ -53,12 +54,25 @@ export class Playground {
   private readonly homes = new WeakMap<DemoService, HTMLElement | null>();
   private instances = 0;
 
+  /**
+   * Lines are drawn from measured coordinates, so they go stale whenever the layout shifts:
+   * e.g. the global stylesheet is loaded asynchronously in production (critical CSS inlining)
+   * and may apply only after the first render. Any shift inside the tree resizes some container.
+   */
+  private readonly layoutObserver = new ResizeObserver(() => this.drawLines());
+
   constructor() {
     afterNextRender(() => this.assignIds());
+
+    inject(DestroyRef).onDestroy(() => this.layoutObserver.disconnect());
   }
 
   registerBlock(block: BlockBase): void {
     this.blocks.set(block.hostElement, block);
+  }
+
+  observeLayout(element: HTMLElement): void {
+    this.layoutObserver.observe(element);
   }
 
   /**
@@ -177,6 +191,10 @@ export class Playground {
     }
 
     return path;
+  }
+
+  private drawLines(): void {
+    this.blocks.forEach((block) => block.drawLine());
   }
 
   private closestBlockAbove(block: BlockBase): BlockBase | null {

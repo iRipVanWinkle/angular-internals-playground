@@ -84,7 +84,7 @@ export abstract class BlockBase implements InjectorView {
   constructor() {
     this.playground.registerBlock(this);
 
-    afterNextRender(() => this.drawLine());
+    afterNextRender(() => this.playground.observeLayout(this.containerEl().nativeElement));
   }
 
   /**
@@ -137,7 +137,7 @@ export abstract class BlockBase implements InjectorView {
   }
 
   /** Draws a line from this block to its parent. */
-  private drawLine(): void {
+  drawLine(): void {
     const parent = this.parent;
 
     if (!parent) {

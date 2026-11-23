@@ -1,4 +1,12 @@
-import { afterRender, Directive, ElementRef, inject, Input } from "@angular/core";
+import {
+  afterRender,
+  DestroyRef,
+  Directive,
+  ElementRef,
+  inject,
+  Input,
+} from "@angular/core";
+import { LineLayoutObserver } from "./line-layout-observer.service";
 
 @Directive({
   standalone: true,
@@ -12,9 +20,15 @@ export class BlockLineDirective {
 
   constructor() {
     afterRender(() => this.setLine());
+
+    const hostEl = this.elementRef.nativeElement;
+    const layoutObserver = inject(LineLayoutObserver);
+
+    layoutObserver.observe(this, hostEl);
+    inject(DestroyRef).onDestroy(() => layoutObserver.unobserve(this, hostEl));
   }
 
-  private setLine() {
+  setLine() {
     const hostEl = this.elementRef.nativeElement;
     const targetEl = this.parent?.targetEl;
 

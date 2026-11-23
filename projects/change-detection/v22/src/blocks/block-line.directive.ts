@@ -1,4 +1,5 @@
-import { afterEveryRender, Directive, ElementRef, inject, input } from '@angular/core';
+import { afterEveryRender, DestroyRef, Directive, ElementRef, inject, input } from '@angular/core';
+import { LineLayoutObserver } from './line-layout-observer.service';
 
 interface LineGeometry {
   length: number;
@@ -19,9 +20,14 @@ export class BlockLineDirective {
       earlyRead: () => this.measureLineToParent(),
       write: (geometry) => this.drawLine(geometry),
     });
+
+    const layoutObserver = inject(LineLayoutObserver);
+
+    layoutObserver.observe(this, this.hostEl);
+    inject(DestroyRef).onDestroy(() => layoutObserver.unobserve(this, this.hostEl));
   }
 
-  private measureLineToParent(): LineGeometry | null {
+  measureLineToParent(): LineGeometry | null {
     const targetEl = this.parent?.targetEl();
 
     if (!targetEl) {
@@ -42,7 +48,7 @@ export class BlockLineDirective {
     };
   }
 
-  private drawLine(geometry: LineGeometry | null) {
+  drawLine(geometry: LineGeometry | null) {
     if (geometry) {
       this.hostEl.style.setProperty('--line-width', `${geometry.length}px`);
       this.hostEl.style.setProperty('--line-rotate', `${geometry.angle}deg`);
